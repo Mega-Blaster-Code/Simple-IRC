@@ -12,18 +12,32 @@ IRC_USER *IRCnewUser(){
 	user->password = NULL;
 	user->input = createMinput(64);
 	user->prompt_size = 16;
+	user->ip = SMsafeCalloc(1, 16);
 	user->has_prompt = 0;
 	user->prompt = SMsafeCalloc(1, user->prompt_size);
+	user->connected = 0;
 	setKeyCallback(user->input, key_typed_callback);
 	return user;
 }
 
 int _IRCexecute(IRC_USER *U){
 	if(!strcmp(U->prompt, "/exit")){
+		flushMinput(U->input);
 		return IRC_CLOSE_PROGRAM;
+	}
+	if(U->prompt[1] == ':'){
+		flushMinput(U->input);
+		return IRC_CUSTOM_COMMAND;
 	}
 	flushMinput(U->input);
 	return IRC_SUCCESS;
+}
+
+void IRCinvalidInput(IRC_USER *U){
+	fcolor8(stdout, 255, 0, 0);
+	printf("\nInvalid Input\n");
+	rcolor8(stdout);
+	flushMinput(U->input);
 }
 
 int IRCupdateUser(IRC_USER *U){
@@ -32,10 +46,7 @@ int IRCupdateUser(IRC_USER *U){
 	int enter = U->input->enter;
 	if(enter){
 		if(U->input->data[0] == 0 || U->input->data[0] == 32 || U->input->length == 0){
-			fcolor8(stdout, 255, 0, 0);
-			printf("\nInvalid Input\n");
-			rcolor8(stdout);
-			flushMinput(U->input);
+			IRCinvalidInput(U);
 			return IRC_SUCCESS;
 		}
 
@@ -59,6 +70,8 @@ int IRCupdateUser(IRC_USER *U){
 				U->prompt_size = U->input->length + 1;
 				U->prompt = SMsafeRealloc(U->prompt, U->prompt_size);
 			}
+
+			U->prompt_pointer = U->input->length;
 			
 			memcpy(U->prompt, U->input->data, U->input->length);
 			U->prompt[U->input->length] = 0;

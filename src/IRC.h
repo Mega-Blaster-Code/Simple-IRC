@@ -12,18 +12,24 @@
 #define IRC_SUCCESS 0
 #define IRC_TERMINATE_PROMPT 1
 #define IRC_CLOSE_PROGRAM 2
+#define IRC_CUSTOM_COMMAND 3
 
 typedef struct {
 	InputBuffer *input;
+	char *ip;
 	char *name;
 	char *password;
 	char *id;
 	char *prompt;
 	int has_prompt;
+	int connected;
 	size_t prompt_size;
+	size_t prompt_pointer;
 } IRC_USER;
 
 void key_typed_callback(void *_c);
+
+void IRCinvalidInput(IRC_USER *U);
 
 IRC_USER *IRCnewUser();
 

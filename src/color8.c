@@ -12,6 +12,10 @@ void enable_ansi(void) {
         SetConsoleMode(hOut, dwMode);
     }
 }
+#else
+void enable_ansi(void){
+	
+}
 #endif
 
 void fcolor8(FILE *stream, int r, int g, int b){

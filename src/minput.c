@@ -59,6 +59,15 @@ void updateMinput(InputBuffer *I){
 					_callMinputCallback(I->func, (void*)&_c);
 				}
 				return;
+			}else if(key == 65){
+				I->special_key = 0;
+				//char _c = '\x1B';
+				//_callMinputCallback(I->func, (void*)&_c);
+				//_c = '[';
+				//_callMinputCallback(I->func, (void*)&_c);
+				//_c = 'A';
+				//_callMinputCallback(I->func, (void*)&_c);
+				return;
 			}
 			I->special_key = 0;
 		}

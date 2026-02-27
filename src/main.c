@@ -28,25 +28,54 @@ int main() {
 	printf("user_password = \"%s\"\n", me->password);
 
 	while (1) {
-		int terminate = IRCupdateUser(me);
+		int result = IRCupdateUser(me);
 		if(me->has_prompt){
-			printf("\n<%s>:%s\n", me->name, me->prompt);
-			fflush(stdout);
+			if(me->connected){
+				printf("\n<%s>:%s\n", me->name, me->prompt);
+				fflush(stdout);
+			}
 		}
-		if(terminate){
+		if(result == IRC_CLOSE_PROGRAM){
+			return 0;
+		}else if(result == IRC_TERMINATE_PROMPT){
 			break;
+		}else if (result == IRC_CUSTOM_COMMAND) {
+			if (me->prompt_pointer < 5) {
+				IRCinvalidInput(me);
+				continue;
+			}
+
+			if (strncmp(me->prompt, "/:ip ", 5) == 0) {
+
+				size_t ip_len = me->prompt_pointer - 5;
+
+				if (ip_len == 0 || ip_len >= 16) {
+					IRCinvalidInput(me);
+					continue;
+				}
+
+				memcpy(me->ip, me->prompt + 5, ip_len);
+				me->ip[ip_len] = 0;
+				fcolor8(stdout, 150, 255, 255);
+				printf("\nIP ");
+				fcolor8(stdout, 50, 255, 255);
+				printf("\"%s\"\n", me->ip);
+				rcolor8(stdout);
+				continue;
+			}
+
+			if (strncmp(me->prompt, "/:break", 7) == 0) {
+				break;
+			}
+
+			IRCinvalidInput(me);
 		}
 	}
 
 	printf("\n");
-	
-	IRCfree(me);
 
     KdisableRawMode();
 
-	return 0;
-
-	const char *ip = "172.28.202.36";
 	int port = 9091;
 
 	int socketfd = 0;
@@ -55,7 +84,9 @@ int main() {
 		return newc_result;
 	}
 
-	MclientConnect(socketfd, ip, port);
+	MclientConnect(socketfd, me->ip, port);
+
+	me->connected = 1;
 
 	Mmessage msg = {
 		.data_len = 16
@@ -68,14 +99,21 @@ int main() {
 	}
 
 	printf("received: %zu = \"%s\"\n", msg.data_len, msg.data);
-	
-	char *message = "This is a message";
-	Mmessage my_msg = {
-		.data = message,
-		.data_len = strlen(message)
+
+	Mmessage my_name = {
+		.data = me->name,
+		.data_len = strlen(me->name)
 	};
 
-	Msend(socketfd, &my_msg);
+	Mmessage my_password = {
+		.data = me->password,
+		.data_len = strlen(me->password)
+	};
+
+	Msend(socketfd, &my_name);
+	Msend(socketfd, &my_password);
+
+	IRCfree(me);
 
     return 0;
 }
